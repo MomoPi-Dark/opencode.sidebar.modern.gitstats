@@ -1,0 +1,42 @@
+{
+  "name": "opencode-sidebar-modern-gitstats",
+  "version": "1.0.0",
+  "description": "OpenCode v2 TUI sidebar plugin for real-time Git branch status, modified files tracking, and interactive branch checkout.",
+  "type": "module",
+  "main": "./tui.ts",
+  "module": "./tui.ts",
+  "exports": {
+    ".": "./tui.ts"
+  },
+  "scripts": {
+    "test": "bun test.ts",
+    "build": "bun build --no-bundle src/gitstatus.tsx"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "opentui",
+    "tui",
+    "git",
+    "git-status",
+    "branch"
+  ],
+  "author": "Gamflaz",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MomoPi-Dark/opencode.sidebar.modern.gitstats"
+  },
+  "dependencies": {
+    "@opencode/client": "^2.0.18",
+    "@opencode/plugin": "^2.0.18",
+    "@opencode/theme": "^2.0.21",
+    "@opentui/core": "0.5.12",
+    "@opentui/solid": "0.5.12",
+    "effect": "^3.22.2",
+    "solid-js": "^1.9.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}
