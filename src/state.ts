@@ -168,7 +168,10 @@ export function createGitStatusState(
       log.error(`could not switch branch to ${name}: ${rawMessage}`);
       ctx.ui.toast.show({
         title: "Checkout Failed",
-        message: rawMessage.replace(/^Git command failed:\s*/i, "").slice(0, 160),
+        message: rawMessage
+          .replace(/^Git command failed:\s*/i, "")
+          .replace(/^error:\s*/i, "")
+          .slice(0, 160),
         variant: "error",
       });
     } finally {

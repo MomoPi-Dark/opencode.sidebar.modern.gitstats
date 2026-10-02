@@ -5,6 +5,12 @@ assert.strictEqual(truncate("main", 10), "main");
 assert.strictEqual(truncate("feature/long-branch-name", 10), "feature/l…");
 assert.strictEqual(truncate("feature/long-branch-name", 10).length, 10);
 
+const checkoutError = "Git command failed: error: Your local changes would be overwritten by checkout";
+const visibleError = checkoutError
+  .replace(/^Git command failed:\s*/i, "")
+  .replace(/^error:\s*/i, "");
+assert.strictEqual(visibleError, "Your local changes would be overwritten by checkout");
+
 const branches = ["develop", "main", "feat/auth", "fix/bug"];
 const currentBranch = "feat/auth";
 const ordered = [...branches].sort((left, right) => {
