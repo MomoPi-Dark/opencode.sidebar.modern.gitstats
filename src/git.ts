@@ -1,17 +1,20 @@
 import { Data, Effect, pipe } from "effect";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { $ } from "bun";
 
 export class GitError extends Data.TaggedError("GitError")<{
   message: string;
   cause?: unknown;
-}> {}
+}> { }
 
 export const gitCommand = (args: string[], cwd: string) =>
   Effect.tryPromise({
-    try: () => execFileAsync("git", args, { cwd }),
+    try: async () => {
+      const { stdout, stderr } = await $`git ${args}`.cwd(cwd).quiet();
+      return {
+        stdout: stdout.toString(),
+        stderr: stderr.toString(),
+      };
+    },
     catch: (error: any) => {
       const msg =
         typeof error?.stderr === "string" && error.stderr.trim()

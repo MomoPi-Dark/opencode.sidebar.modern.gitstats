@@ -1,9 +1,12 @@
 import assert from "node:assert";
-import { truncate } from "./src/utils";
+import { branchMaxLength, truncate } from "./src/utils";
 
 assert.strictEqual(truncate("main", 10), "main");
 assert.strictEqual(truncate("feature/long-branch-name", 10), "feature/l…");
 assert.strictEqual(truncate("feature/long-branch-name", 10).length, 10);
+assert.strictEqual(branchMaxLength(40, 4, 7), 27);
+assert.strictEqual(branchMaxLength(40, 4), 34);
+assert.strictEqual(branchMaxLength(0, 4, 7), 25);
 
 const checkoutError = "Git command failed: error: Your local changes would be overwritten by checkout";
 const visibleError = checkoutError

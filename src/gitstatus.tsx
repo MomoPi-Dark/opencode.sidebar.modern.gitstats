@@ -9,7 +9,7 @@ import {
   worktreeUsingBranch,
 } from "./git";
 import { GitStatusProps } from "./type";
-import { log, truncate } from "./utils";
+import { branchMaxLength, log, truncate } from "./utils";
 
 export const DEBOUNCE_MS = 300;
 export const DOUBLE_CLICK_GUARD_MS = 350;
@@ -217,6 +217,7 @@ export default Plugin.define({
 
     let lastBranchClick = 0;
     const pressedButtons = new Set<number>();
+    const [panelWidth, setPanelWidth] = createSignal(0);
 
     const MAX_BRANCHES = 6;
 
@@ -241,12 +242,14 @@ export default Plugin.define({
           <Show when={props.available()}>
             <box
               flexDirection="column"
+              width="100%"
               border={true}
               borderStyle="single"
               borderColor={colors().border}
               title=" Git Status "
               titleAlignment="left"
               titleColor={colors().textMuted}
+              ref={(element) => setPanelWidth(element.width)}
             >
               <text>
                 <span style={{ fg: colors().textMuted }}>
@@ -254,7 +257,7 @@ export default Plugin.define({
                 </span>
                 <span style={{ fg: colors().success }}>{"⎇ "}</span>
                 <span style={{ fg: colors().success }}>
-                  {truncate(props.branch(), 17)}
+                  {truncate(props.branch(), branchMaxLength(panelWidth(), 11))}
                 </span>
               </text>
 
@@ -353,7 +356,14 @@ export default Plugin.define({
                               : colors().textBase,
                           }}
                         >
-                          {truncate(name, isCurrent() ? 17 : 23)}
+                          {truncate(
+                            name,
+                            branchMaxLength(
+                              panelWidth(),
+                              4,
+                              isCurrent() ? 7 : isSwitching() ? 4 : 0,
+                            ),
+                          )}
                         </span>
                         {isCurrent() && (
                           <span style={{ fg: colors().textMuted }}>

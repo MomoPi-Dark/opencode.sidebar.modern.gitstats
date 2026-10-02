@@ -32,3 +32,16 @@ export function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
   return str.slice(0, Math.max(0, maxLen - 1)) + "…";
 }
+
+export function branchMaxLength(
+  panelWidth: number,
+  prefixWidth: number,
+  suffixWidth = 0,
+): number {
+  const borderWidth = 2;
+  const effectiveWidth = panelWidth > 0 ? panelWidth : 38;
+  return Math.max(
+    1,
+    effectiveWidth - borderWidth - prefixWidth - suffixWidth,
+  );
+}
