@@ -1,5 +1,5 @@
 import assert from "node:assert";
-import { truncate } from "./src/gitstatus";
+import { truncate } from "./src/utils";
 
 assert.strictEqual(truncate("main", 10), "main");
 assert.strictEqual(truncate("feature/long-branch-name", 10), "feature/l…");
