@@ -149,6 +149,7 @@ export function createGitStatusState(
           `branch ${name} is already checked out in worktree: ${result.alreadyCheckedOut}`,
         );
         ctx.ui.toast.show({
+          title: "Checkout Failed",
           message: `${name} is already checked out in ${result.alreadyCheckedOut}`,
           variant: "error",
         });
@@ -161,9 +162,15 @@ export function createGitStatusState(
 
         void refresh();
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      log.error(`could not switch branch to ${name}: ${message}`);
+    } catch (error: any) {
+      const rawMessage =
+        error?.message || (error instanceof Error ? error.message : String(error));
+      log.error(`could not switch branch to ${name}: ${rawMessage}`);
+      ctx.ui.toast.show({
+        title: "Checkout Failed",
+        message: rawMessage.replace(/^Git command failed:\s*/i, "").slice(0, 160),
+        variant: "error",
+      });
     } finally {
       setSwitching();
     }

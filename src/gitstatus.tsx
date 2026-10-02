@@ -140,8 +140,7 @@ export default Plugin.define({
                             : isCurrent()
                               ? "●"
                               : "○"}
-                        </span>
-                        {" "}
+                        </span>{" "}
                         <span
                           style={{
                             fg: isCurrent()
@@ -157,9 +156,7 @@ export default Plugin.define({
                           </span>
                         )}
                         {isSwitching() && (
-                          <span style={{ fg: colors().warning }}>
-                            {" (…)"}
-                          </span>
+                          <span style={{ fg: colors().warning }}>{" (…)"}</span>
                         )}
                       </text>
                     </box>

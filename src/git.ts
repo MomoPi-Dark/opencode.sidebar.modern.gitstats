@@ -12,11 +12,18 @@ export class GitError extends Data.TaggedError("GitError")<{
 export const gitCommand = (args: string[], cwd: string) =>
   Effect.tryPromise({
     try: () => execFileAsync("git", args, { cwd }),
-    catch: (error) =>
-      new GitError({
-        message: `Git command failed: ${error instanceof Error ? error.message : String(error)}`,
+    catch: (error: any) => {
+      const msg =
+        typeof error?.stderr === "string" && error.stderr.trim()
+          ? error.stderr.trim()
+          : error instanceof Error
+            ? error.message
+            : String(error);
+      return new GitError({
+        message: msg,
         cause: error,
-      }),
+      });
+    },
   });
 
 export const getBranch = (cwd: string) =>
