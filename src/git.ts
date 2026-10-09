@@ -35,16 +35,31 @@ export const getBranch = (cwd: string) =>
     Effect.map((result) => result.stdout.trim()),
   );
 
+export function parseStatusPorcelain(output: string): {
+  branch: string;
+  changed: number;
+} {
+  const lines = output.split("\n");
+  const header = lines.find((line) => line.startsWith("## ")) ?? "## HEAD";
+  const rawBranch = header.slice(3);
+  const branch =
+    rawBranch === "HEAD (no branch)"
+      ? "HEAD"
+      : rawBranch.startsWith("No commits yet on ")
+        ? rawBranch.slice("No commits yet on ".length)
+        : rawBranch.split("...")[0].split(" [")[0] || "HEAD";
+
+  return {
+    branch,
+    changed: lines.filter((line) => line.length > 0 && !line.startsWith("## "))
+      .length,
+  };
+}
+
 export const getStatus = (cwd: string) =>
   pipe(
-    gitCommand(["status", "--porcelain"], cwd),
-    Effect.map(
-      (result) =>
-        result.stdout
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean).length,
-    ),
+    gitCommand(["status", "--porcelain=v1", "--branch"], cwd),
+    Effect.map((result) => parseStatusPorcelain(result.stdout)),
   );
 
 export const getBranches = (cwd: string) =>

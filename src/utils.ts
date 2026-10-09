@@ -1,14 +1,22 @@
-import { appendFileSync, mkdirSync } from "node:fs";
+import {
+  appendFileSync,
+  mkdirSync,
+  statSync,
+  truncateSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 const LOG_PREFIX = "[opencode.sidebar.modern.gitstats]";
 const LOG_FILE = join(homedir(), ".local/share/opencode/log/gitstatus.log");
+const LOG_MAX_BYTES = 1_000_000;
 
 export function writeLog(level: "INFO" | "WARN" | "ERROR", message: string) {
   const line = `[${new Date().toISOString()}] [${level}] ${LOG_PREFIX} ${message}\n`;
   try {
     mkdirSync(dirname(LOG_FILE), { recursive: true });
+    if ((statSync(LOG_FILE, { throwIfNoEntry: false })?.size ?? 0) > LOG_MAX_BYTES)
+      truncateSync(LOG_FILE, 0);
     appendFileSync(LOG_FILE, line);
   } catch {}
 }

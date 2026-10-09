@@ -1,4 +1,5 @@
 import assert from "node:assert";
+import { parseStatusPorcelain } from "./src/git";
 import { branchMaxLength, truncate } from "./src/utils";
 
 assert.strictEqual(truncate("main", 10), "main");
@@ -24,5 +25,12 @@ const ordered = [...branches].sort((left, right) => {
 
 assert.strictEqual(ordered[0], "feat/auth");
 assert.deepStrictEqual(ordered.slice(1), ["develop", "fix/bug", "main"]);
+
+assert.deepStrictEqual(
+  parseStatusPorcelain(
+    "## feat/auth...origin/feat/auth [ahead 1]\n M src/app.ts\n?? notes.md\n",
+  ),
+  { branch: "feat/auth", changed: 2 },
+);
 
 console.log("Git status helper tests passed!");

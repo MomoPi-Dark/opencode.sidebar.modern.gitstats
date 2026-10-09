@@ -6,7 +6,8 @@
   "main": "./tui.ts",
   "module": "./tui.ts",
   "exports": {
-    ".": "./tui.ts"
+    ".": "./tui.ts",
+    "./tui": "./tui.ts"
   },
   "scripts": {
     "test": "bun test.ts",

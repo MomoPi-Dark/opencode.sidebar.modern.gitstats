@@ -1,18 +1,13 @@
 import { Plugin } from "@opencode/plugin/tui";
-import { Effect, Fiber } from "effect";
+import { Effect } from "effect";
 import { createSignal, Show } from "solid-js";
-import {
-  getBranch,
-  getBranches,
-  getStatus,
-  gitCommand,
-  worktreeUsingBranch,
-} from "./git";
+import { getBranches, getStatus, gitCommand, worktreeUsingBranch } from "./git";
 import { GitStatusProps } from "./type";
 import { branchMaxLength, log, truncate } from "./utils";
 
 export const DEBOUNCE_MS = 300;
 export const DOUBLE_CLICK_GUARD_MS = 350;
+export const MIN_REFRESH_INTERVAL_MS = 500;
 
 function createGitStatusState(
   ctx: Plugin.Context,
@@ -25,65 +20,75 @@ function createGitStatusState(
   const [isRefreshing, setIsRefreshing] = createSignal(false);
   const [animFrame, setAnimFrame] = createSignal(0);
   const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-  let animFiber: Fiber.RuntimeFiber<void, never> | undefined;
+
+  let animTimer: ReturnType<typeof setInterval> | undefined;
 
   const startAnimation = () => {
-    if (animFiber) return;
-    const loop = Effect.gen(function* () {
-      while (true) {
-        yield* Effect.sleep("70 millis");
-        setAnimFrame((prev) => (prev + 1) % SPINNER_FRAMES.length);
-      }
-    });
-    animFiber = Effect.runFork(loop);
+    if (animTimer) return;
+    animTimer = setInterval(
+      () => setAnimFrame((prev) => (prev + 1) % SPINNER_FRAMES.length),
+      120,
+    );
+    animTimer.unref?.();
   };
 
   const stopAnimation = () => {
-    if (animFiber) {
-      void Effect.runPromise(Fiber.interrupt(animFiber));
-      animFiber = undefined;
-    }
+    if (animTimer) clearInterval(animTimer);
+    animTimer = undefined;
     setAnimFrame(0);
   };
 
   let disposed = false;
   let refreshing = false;
   let pendingRefresh = false;
+  let pendingBranches = false;
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  let lastRefreshAt = 0;
 
   const getDirectory = () => ctx.location?.directory ?? process.cwd();
 
-  const refresh = async () => {
+  const refresh = async (includeBranches = true) => {
     if (disposed) return;
     if (refreshing) {
       pendingRefresh = true;
+      pendingBranches ||= includeBranches;
+      return;
+    }
+    const wait = MIN_REFRESH_INTERVAL_MS - (Date.now() - lastRefreshAt);
+    if (lastRefreshAt > 0 && wait > 0) {
+      pendingRefresh = true;
+      pendingBranches ||= includeBranches;
+      if (!debounceTimer) {
+        debounceTimer = setTimeout(() => {
+          debounceTimer = undefined;
+          const refreshBranches = pendingBranches;
+          pendingBranches = false;
+          void refresh(refreshBranches);
+        }, wait);
+        debounceTimer.unref?.();
+      }
       return;
     }
     const directory = getDirectory();
     refreshing = true;
+    lastRefreshAt = Date.now();
     setIsRefreshing(true);
     startAnimation();
-    log.info(`refreshing git status in: ${directory}`);
     try {
       const program = Effect.gen(function* () {
-        const [branchRes, statusRes, refsRes] = yield* Effect.all([
-          getBranch(directory),
-          getStatus(directory),
-          getBranches(directory),
-        ]);
-        return { branchRes, statusRes, refsRes };
+        const statusRes = yield* getStatus(directory);
+        const refsRes = includeBranches
+          ? yield* getBranches(directory)
+          : undefined;
+        return { statusRes, refsRes };
       });
 
-      const { branchRes, statusRes, refsRes } =
-        await Effect.runPromise(program);
+      const { statusRes, refsRes } = await Effect.runPromise(program);
       if (!disposed) {
-        setBranch(branchRes);
-        setChanged(statusRes);
+        setBranch(statusRes.branch);
+        setChanged(statusRes.changed);
         setAvailable(true);
-        setBranches(refsRes);
-        log.info(
-          `refreshed — branch: ${branchRes}, changed: ${statusRes}, branches: ${refsRes.length}`,
-        );
+        if (refsRes) setBranches(refsRes);
       }
     } catch (error) {
       log.warn(
@@ -99,18 +104,27 @@ function createGitStatusState(
       setIsRefreshing(false);
       stopAnimation();
       if (pendingRefresh && !disposed) {
+        const refreshBranches = pendingBranches;
         pendingRefresh = false;
-        void refresh();
+        pendingBranches = false;
+        void refresh(refreshBranches);
       }
     }
   };
 
-  const scheduleRefresh = () => {
-    if (debounceTimer) clearTimeout(debounceTimer);
+  const scheduleRefresh = (includeBranches = false) => {
+    pendingBranches ||= includeBranches;
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = undefined;
+    }
     debounceTimer = setTimeout(() => {
       debounceTimer = undefined;
-      void refresh();
+      const refreshBranches = pendingBranches;
+      pendingBranches = false;
+      void refresh(refreshBranches);
     }, DEBOUNCE_MS);
+    debounceTimer.unref?.();
   };
 
   const checkout = async (name: string) => {
@@ -146,7 +160,7 @@ function createGitStatusState(
           variant: "success",
         });
 
-        void refresh();
+        void refresh(true);
       }
     } catch (error: any) {
       const rawMessage =
@@ -174,16 +188,16 @@ function createGitStatusState(
     });
 
   const off = [
-    ctx.data.on("vcs.branch.updated", scheduleRefresh),
-    ctx.data.on("filesystem.changed", scheduleRefresh),
-
-    () => {
-      disposed = true;
-      if (debounceTimer) clearTimeout(debounceTimer);
-    },
+    ctx.data.on("vcs.branch.updated", () => scheduleRefresh(true)),
+    ctx.data.on("filesystem.changed", () => scheduleRefresh(false)),
   ];
 
   const dispose = () => {
+    disposed = true;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = undefined;
+    pendingRefresh = false;
+    pendingBranches = false;
     stopAnimation();
     off.forEach((unsubscribe) => unsubscribe());
   };
@@ -221,7 +235,7 @@ export default Plugin.define({
 
     const MAX_BRANCHES = 6;
 
-    context.ui.slot({
+    const disposeSlot = context.ui.slot({
       append: "sidebar.content",
       render: () => {
         const colors = () => ({
@@ -395,6 +409,7 @@ export default Plugin.define({
     return () => {
       log.info("disposing plugin");
       props.dispose();
+      disposeSlot();
     };
   },
 });
