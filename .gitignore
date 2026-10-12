@@ -1,4 +1,40 @@
-node_modules
+# dependencies (bun install)
+node_modules/
+bun.*
+pnpm-*
+
+# output
+out
+dist/
+*.tgz
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
 *.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# caches
+.eslintcache
+.cache
+*.tsbuildinfo
+*.map
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
 .DS_Store
-dist
+
+# Build
+.dist
+/tui.js
+/index.js

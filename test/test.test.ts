@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import { parseStatusPorcelain } from "./src/git";
-import { branchMaxLength, truncate } from "./src/utils";
+import { parseStatusPorcelain } from "../src/git";
+import { branchMaxLength, truncate } from "../src/utils";
 
 assert.strictEqual(truncate("main", 10), "main");
 assert.strictEqual(truncate("feature/long-branch-name", 10), "feature/l…");
@@ -9,11 +9,15 @@ assert.strictEqual(branchMaxLength(40, 4, 7), 27);
 assert.strictEqual(branchMaxLength(40, 4), 34);
 assert.strictEqual(branchMaxLength(0, 4, 7), 25);
 
-const checkoutError = "Git command failed: error: Your local changes would be overwritten by checkout";
+const checkoutError =
+  "Git command failed: error: Your local changes would be overwritten by checkout";
 const visibleError = checkoutError
   .replace(/^Git command failed:\s*/i, "")
   .replace(/^error:\s*/i, "");
-assert.strictEqual(visibleError, "Your local changes would be overwritten by checkout");
+assert.strictEqual(
+  visibleError,
+  "Your local changes would be overwritten by checkout",
+);
 
 const branches = ["develop", "main", "feat/auth", "fix/bug"];
 const currentBranch = "feat/auth";
