@@ -41,7 +41,7 @@
     "url": "https://github.com/MomoPi-Dark/opencode.sidebar.modern.gitstats"
   },
   "dependencies": {
-    "@opencode/client": "2.0.27",
+    "@opencode/client": "2.0.32",
     "@opencode/plugin": "2.0.27",
     "@opencode/theme": "2.0.27",
     "@opentui/core": "0.5.17",
